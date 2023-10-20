@@ -43,6 +43,12 @@ private:
 
 REGISTER_TWEAK(RawStringLiteral)
 
+static bool isFeatureAvailable(const Tweak::Selection &Inputs) {
+  // Raw strings are available only for C++11 or later versions, and they are
+  // not available for C.
+  return Inputs.AST->getASTContext().getLangOpts().CPlusPlus11;
+}
+
 static bool isNormalString(const StringLiteral &Str, SourceLocation Cursor,
                           SourceManager &SM) {
   // All chunks must be normal ASCII strings, not u8"..." etc.
@@ -76,7 +82,7 @@ bool RawStringLiteral::prepare(const Selection &Inputs) {
   if (!N)
     return false;
   Str = dyn_cast_or_null<StringLiteral>(N->ASTNode.get<Stmt>());
-  return Str &&
+  return Str && isFeatureAvailable(Inputs) &&
          isNormalString(*Str, Inputs.Cursor, Inputs.AST->getSourceManager()) &&
          needsRaw(Str->getBytes()) && canBeRaw(Str->getBytes());
 }
